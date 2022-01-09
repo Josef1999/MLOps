@@ -1,0 +1,41 @@
+pipeline {
+  agent {
+    kubernetes {
+      defaultContainer 'core-builder'
+      yamlFile 'podTemplate.yaml'
+    }
+  }
+  
+  stages {
+    stage('test model') {
+      steps {
+        sh '''
+          cd test
+          ./test_model.sh
+          '''
+      }
+    }
+    stage('deploy model') {
+      steps {
+        sh '''
+          cd deploy
+          ./deploy_model.sh
+          '''
+      }
+    }  
+    stage('push model') {
+      steps {
+      withCredentials([[$class: 'UsernamePasswordMultiBinding',
+              credentialsId: 'gitee account',
+              usernameVariable: 'GIT_USERNAME',
+              passwordVariable: 'GIT_PASSWORD']]) {
+          sh '''
+          cd push
+          ./push_model.sh
+          '''
+        }
+      }
+    }
+
+  }
+}
